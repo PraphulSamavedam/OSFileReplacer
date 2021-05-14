@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
+import shutil
 
 main_window = tk.Tk(className="")
 main_window.title('Open Source File Replacer')
@@ -17,44 +18,35 @@ unlock_image = tk.PhotoImage(file=r"data\icons\unlock.png").subsample(10,10)
 top_button_row = 2
 bottom_button_row = 4
 text_row = 3
-
+source_selected = tk.BooleanVar(main_window,value=False)
+destination_selected = tk.BooleanVar(main_window,value=False)
 SupportFileTypes = (
     ('All files', '*.*'),
     # ('text files', '*.txt')
 )
 
-"""
-# Text editor
-text = tk.Text(main_window, height=12)
-text.grid(column=0, row=0, sticky='nsew')
-
-def open_text_file():
-    # file type
-    filetypes = (
-        ('text files', '*.txt'),
-        ('All files', '*.*')
-    )
-    # show the open file dialog
-    f = fd.askopenfile(filetypes=filetypes)
-    # read the text file and show its content on the Text
-    text.insert('1.0', f.readlines())
-    
-"""
-
-
 def open_source_file():
     file_selected = fd.askopenfile(filetypes=SupportFileTypes)
     source_text.insert(1.0, file_selected.name)
-
+    source_selected.set(value=True)
+    if source_selected.get() and destination_selected.get() :
+        replace_button.config(state='enabled')
+    else:
+        pass
 
 def open_destination_file():
     file_selected = fd.askopenfile(filetypes=SupportFileTypes)
     destination_text.insert(1.0, file_selected.name)
-
+    destination_selected.set(value=True)
+    if source_selected.get() and destination_selected.get() :
+        replace_button.config(state='enabled')
+    else:
+        pass
 
 def replace_function():
     if config_variable.get()=='Simple Replace':
-        print(f"Config chosen = {config_variable.get()}")
+        print(f"Source = {source_text.get('1.0','end-1c')}, Destination = {destination_text.get('1.0','end-1c')}")
+        # shutil.copy(src=source_text.get("1.0","end-1c"),dst=destination_text.get("1.0","end-1c"))
     elif config_variable.get() =='Git Replace':
         print(f"**Config chosen = {config_variable.get()}")
     else:
@@ -67,21 +59,24 @@ def set_text_names():
     # source_button['text'] = f'Source {file_folder_option.get()}'
     # destination_button['text'] = f'Destination {file_folder_option.get()}'
 
-def lock_configuration():
-    lock_config_button.config(state='disabled')
-    unlock_config_button.config(state='enabled')
-    file_folder_config_chosen.config(state='disabled')
-    source_button['text'] = f"Source {file_folder_option.get()}"
-    destination_button['text'] = f"Destination {file_folder_option.get()}"
-    config_chosen.config(state='enabled')
-    print("Locked the configuration")
-
-def unlock_configuration():
-    unlock_config_button.config(state='disabled')
-    lock_config_button.config(state='enabled')
-    file_folder_config_chosen.config(state='enabled')
-    config_chosen.config(state='disabled')
-    print("Unlocked the configuration")
+def lock_unlock_configuration():
+    if file_folder_config_lock_unlock_status.get() =='unlocked':
+        file_folder_config_chosen.config(state='disabled')
+        source_button['text'] = f"Source {file_folder_option.get()}"
+        source_button.config(state='enabled')
+        destination_button['text'] = f"Destination {file_folder_option.get()}"
+        destination_button.config(state='enabled')
+        config_chosen.config(state='enabled')
+        file_folder_config_lock_unlock_status.set('locked')
+        print("Locked the configuration")
+    elif file_folder_config_lock_unlock_status.get() =='locked':
+        file_folder_config_chosen.config(state='enabled')
+        config_chosen.config(state='disabled')
+        file_folder_config_lock_unlock_status.set('unlocked')
+        source_button.config(state='disabled')
+        destination_button.config(state='disabled')
+        replace_button.config(state='disabled')
+        print("Unlocked the configuration")
 
 total_columns = 5
 total_rows = 5
@@ -100,7 +95,8 @@ file_folder_options = ('', 'file', 'folder')
 file_folder_option.set(file_folder_options[1])
 file_folder_config_chosen = ttk.OptionMenu(main_window, file_folder_option, *file_folder_options)
 file_folder_config_chosen.grid(row=1, column=1, sticky='nsew')
-
+file_folder_config_lock_unlock_status = tk.StringVar(main_window)
+file_folder_config_lock_unlock_status.set("unlocked")
 
 # Configuring the text boxes
 source_text = tk.Text(main_window, height=1, width=30, padx=1, pady=1)
@@ -110,22 +106,16 @@ destination_text = tk.Text(main_window, height=1, width=30, padx=1, pady=1)
 destination_text.grid(column=2, row=text_row)
 
 """ Configuring Buttons """
-# Lock configuration
-lock_config_button = ttk.Button(main_window, text=f'Lock config',
-                                command=lock_configuration)
-lock_config_button.grid(column=2, row=0, sticky='w', ipadx=5, ipady=2, padx=10, pady=10)
-# Unlock Configuration
-unlock_config_button = ttk.Button(main_window, text=f'Unlock config',
-                                command=unlock_configuration)
-unlock_config_button.grid(column=2, row=1, sticky='w', ipadx=5, ipady=2, padx=10, pady=10)
+# Lock/Unlock configuration
+lock_unlock_config_button = ttk.Button(main_window, text=f'Lock/Unlock\nfile or folder config',
+                                command=lock_unlock_configuration)
+lock_unlock_config_button.grid(column=2, row=0, sticky='w', ipadx=5, ipady=2, padx=10, pady=10)
 
 # # Source Button
 source_button = ttk.Button(main_window, text=f'Source {file_folder_option.get()}', command=open_source_file,
                            image=photoimage, compound='left')
 source_button.grid(column=0, row=top_button_row, sticky='e', ipadx=2, ipady=2, padx=0, pady=0)
-
-# config_button = ttk.Button(main_window, text='Set Configuration', command=open_source_file)
-# config_button.grid(column=1, row=0, ipadx=5, ipady=2, padx=10, pady=10)
+source_button.config(state='disabled')
 
 # Configuration Drop Down
 config_variable = tk.StringVar(main_window)
@@ -142,10 +132,11 @@ destination_button = ttk.Button(main_window, text=f'Destination {file_folder_opt
                                 command=open_destination_file,
                                 image=photoimage, compound='right')
 destination_button.grid(column=2, row=top_button_row, sticky='w', ipadx=5, ipady=2, padx=10, pady=10)
+destination_button.config(state='disabled')
 
 # Replace Button
 replace_button = ttk.Button(main_window, text='Replace', command=replace_function)
 replace_button.grid(column=1, row=bottom_button_row, ipadx=5, ipady=5, padx=10, pady=10, sticky='s')
-
+replace_button.config(state='disabled')
 # link function to chan ge dropdown
 main_window.mainloop()
