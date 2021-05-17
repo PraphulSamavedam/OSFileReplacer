@@ -1,10 +1,12 @@
+import shutil
 import tkinter as tk
 from tkinter import filedialog as fd
 from tkinter import ttk
+from tkinter import messagebox
 
 main_window = tk.Tk(className="")
 main_window.title('Open Source File Replacer')
-main_window.resizable(True, True)
+main_window.resizable(False, False)
 width = 700
 height = 250
 main_window.geometry(F'{width}x{height}')
@@ -46,11 +48,32 @@ def open_destination_file():
 
 
 def replace_function():
-    if config_variable.get() == 'Simple Replace':
-        print(f"Source = {source_text.get('1.0', 'end-1c')}, Destination = {destination_text.get('1.0', 'end-1c')}")
-        # shutil.copy(src=source_text.get("1.0","end-1c"),dst=destination_text.get("1.0","end-1c"))
-    elif config_variable.get() == 'Git Replace':
-        print(f"**Config chosen = {config_variable.get()}")
+    """ Executes the repalcement based on the configuration selected"""
+    source_path = source_text.get('1.0', 'end-1c')
+    destination_path = destination_text.get('1.0', 'end-1c')
+    config_selected = config_variable.get()
+    file_folder_config_selected = file_folder_option.get()
+    print(f"Source = {source_path}\nDestination = {destination_path}\nConfig chosen = "
+          f"{config_selected}\nfile_folder_config_chosen = {file_folder_config_selected}")
+    if config_selected == config_options[1]: # 'Regular Replace'
+        if file_folder_config_selected == file_folder_options[1]: # 'File'
+            source_file_name = str(source_path).split('/')[-1]
+            destination_folder = "/".join([x for x in destination_path.split("/")[0:-1]])
+            dst = "/".join((destination_folder,source_file_name))
+            if source_path == dst:
+                messagebox.showinfo(title="No replace required",message="Source and destination files are same")
+            else:
+                try:
+                    shutil.copy(src=source_path, dst=dst)
+                except Exception as e:
+                    print(e)
+                messagebox.showinfo(title="Successful replaced" ,message=f"Sucessfully copied the {source_file_name} "
+                                                                         f"to {destination_folder}")
+        pass
+    elif config_selected ==  config_options[2]: # 'Little Advance Replace'
+        print(f"Config chosen = {config_selected}")
+    elif config_selected == config_options[3]: #  'Git Replace':
+        pass
     else:
         pass
     pass
@@ -101,7 +124,7 @@ file_folder_config_lock_unlock_status.set("unlocked")
 config_variable = tk.StringVar(main_window)
 configuration_label = ttk.Label(main_window, text="Select the configuration: ",
                                 font=("Times New Roman", 10)).grid(row=top_button_row, column=1)
-config_options = ('', 'Simple Replace', 'Git Replace')
+config_options = ('','Regular Replace', 'Little Advance Replace', 'Git Replace')
 config_variable.set(config_options[1])
 config_chosen = ttk.OptionMenu(main_window, config_variable, *config_options)
 config_chosen.grid(row=text_row, column=1, sticky='nsew')
